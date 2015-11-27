@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'getoptlong'
+require 'image2pdf'
+
+Usage = <<EOF
+Usage: image2pdf [options] file1 [file2 ...]
+
+Options:
+  -h, --help                Print this help message and exit
+  -v, --version             Print version information and exit
+  -o, --output xxx          Specify the output file name
+EOF
+
+VersionInfo = "image2pdf v#{ImageToPDF::VERSION}"
+
+def parse_arguments
+  opts = GetoptLong.new(
+    ['--help',    '-h', GetoptLong::NO_ARGUMENT],
+    ['--version', '-v', GetoptLong::NO_ARGUMENT],
+    ['--output',  '-o', GetoptLong::REQUIRED_ARGUMENT]
+  )
+
+  output = 'output.pdf'
+
+  begin
+    opts.each do |opt, arg|
+      case opt
+        when '--help'
+          puts Usage
+          exit 0
+        when '--version'
+          puts VersionInfo
+          exit 0
+        when '--output'
+          output = arg
+      end
+    end
+  rescue GetoptLong::MissingArgument
+    exit 1
+  end
+
+  if ARGV.size < 1
+    STDERR.puts "Error: no input files"
+    STDERR.puts Usage
+    exit 1
+  end
+
+  ARGV.each do |filename|
+    unless File.file?(filename) and File.readable?(filename)
+      STDERR.puts "Error: not a readable file: #{filename}"
+      exit 1
+    end
+
+    unless ['.png', '.jpg', '.jpeg'].include?(File.extname(filename))
+      STDERR.puts "Error: illegal file type: #{filename}"
+      exit 1
+    end
+  end
+
+  [ARGV, output]
+end
+
+images, output = parse_arguments
+
+begin
+  ImageToPDF.convert(images, output)
+  puts "Done. Successfully written to #{output}"
+rescue ImageToPDF::ImageFormatError => e
+  STDERR.puts "Error: image format error: #{e}"
+  exit 2
+rescue Exception => e
+  STDERR.puts "Error: unexpected exception (#{e.class}): #{e}"
+  exit 127
+end
