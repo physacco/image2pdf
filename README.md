@@ -6,6 +6,8 @@ into a PDF document.
 
 It supports JPEG and PNG file formats.
 
+Tested on Ruby 2.2.2, but it should be able to run on Ruby >= 2.0.
+
 ## Installation
 
 ```
